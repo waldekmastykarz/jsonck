@@ -28,6 +28,10 @@
   ],
   "author": "",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/waldekmastykarz/jsonck"
+  },
   "dependencies": {
     "ajv": "^8.12.0",
     "ajv-formats": "^3.0.1",
