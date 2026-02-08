@@ -1,11 +1,11 @@
-# JSON Validator CLI
+# jsonck
 
 Validate JSON files against JSON schemas. Supports local files, URLs, stdin, batch validation, and structured JSON output for scripts and LLMs.
 
 ## Installation
 
 ```bash
-npm install -g json-validator
+npm install -g jsonck
 ```
 
 Requires Node.js >= 20.
@@ -15,34 +15,34 @@ Requires Node.js >= 20.
 Validate a file using its embedded `$schema`:
 
 ```bash
-json-validator data.json
+jsonck data.json
 ```
 
 Validate against a specific schema (local file or URL):
 
 ```bash
-json-validator data.json --schema ./schemas/my-schema.json
-json-validator data.json --schema https://example.com/schema.json
+jsonck data.json --schema ./schemas/my-schema.json
+jsonck data.json --schema https://example.com/schema.json
 ```
 
 Validate JSON from stdin (pipe from jq, curl, etc.):
 
 ```bash
-cat data.json | json-validator - --schema ./schema.json
-jq '.config' big.json | json-validator - --schema ./config-schema.json
-curl -s https://api.example.com/data | json-validator --schema ./schema.json
+cat data.json | jsonck - --schema ./schema.json
+jq '.config' big.json | jsonck - --schema ./config-schema.json
+curl -s https://api.example.com/data | jsonck --schema ./schema.json
 ```
 
 Validate multiple files at once:
 
 ```bash
-json-validator *.json --schema ./schema.json
+jsonck *.json --schema ./schema.json
 ```
 
 Get structured JSON output (for scripts, CI, LLMs):
 
 ```bash
-json-validator data.json --schema ./schema.json --json
+jsonck data.json --schema ./schema.json --json
 ```
 
 ```json
@@ -59,7 +59,7 @@ json-validator data.json --schema ./schema.json --json
 Use exit codes in scripts:
 
 ```bash
-if json-validator data.json --schema ./schema.json; then
+if jsonck data.json --schema ./schema.json; then
   echo "Valid"
 else
   echo "Invalid"
@@ -69,7 +69,7 @@ fi
 ## Usage
 
 ```
-json-validator [files...] [options]
+jsonck [files...] [options]
 ```
 
 ### Arguments
@@ -117,7 +117,7 @@ npm test
 ### Debug
 
 ```bash
-DEBUG=json-validator json-validator data.json
+DEBUG=jsonck jsonck data.json
 ```
 
 ## Dependencies

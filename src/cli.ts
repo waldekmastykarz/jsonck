@@ -18,7 +18,7 @@ import {
 const require = createRequire(import.meta.url);
 const packageJson = require('../package.json') as { version: string };
 
-const log = debug('json-validator');
+const log = debug('jsonck');
 
 interface CliOptions {
   schema?: string;
@@ -29,7 +29,7 @@ interface CliOptions {
 const program = new Command();
 
 program
-  .name('json-validator')
+  .name('jsonck')
   .description('Validate JSON files against JSON schemas')
   .version(packageJson.version)
   .argument('[files...]', 'JSON files to validate (use - for stdin)')

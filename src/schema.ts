@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import debug from 'debug';
 
-const log = debug('json-validator');
+const log = debug('jsonck');
 
 function isUrl(source: string): boolean {
   return source.startsWith('http://') || source.startsWith('https://');

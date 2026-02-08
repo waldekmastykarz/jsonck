@@ -1,11 +1,11 @@
 {
-  "name": "json-validator",
-  "version": "2.0.0",
-  "description": "CLI tool to validate JSON files against JSON schemas",
+  "name": "jsonck",
+  "version": "1.0.0",
+  "description": "Validate JSON files against JSON schemas. Supports stdin, batch, local/remote schemas, and structured JSON output.",
   "type": "module",
   "main": "dist/index.js",
   "bin": {
-    "json-validator": "./dist/cli.js"
+    "jsonck": "./dist/cli.js"
   },
   "engines": {
     "node": ">=20"
