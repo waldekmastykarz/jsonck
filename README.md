@@ -1,10 +1,33 @@
 # jsonck
 
-Validate JSON files against JSON schemas. Supports local files, URLs, stdin, batch validation, and structured JSON output for scripts and LLMs.
+[![npm version](https://img.shields.io/npm/v/jsonck)](https://www.npmjs.com/package/jsonck)
+[![license](https://img.shields.io/npm/l/jsonck)](LICENSE)
+[![node](https://img.shields.io/node/v/jsonck)](https://nodejs.org)
 
-## Installation
+**One command to validate any JSON file against any JSON Schema.**
+
+Zero config when your files have `$schema`. Pipes, globs, remote schemas, and structured JSON output all work out of the box.
 
 ```bash
+npx jsonck data.json
+# ✓ valid
+```
+
+## Why jsonck?
+
+- **Zero config** — reads `$schema` from your JSON files automatically
+- **Pipes & globs** — `curl ... | jsonck --schema url` or `jsonck *.json`
+- **JSON output** — `--json` gives structured results for scripts, CI, and LLM tool calls
+- **Fast** — single Ajv instance with schema caching, no startup overhead
+- **Tiny** — 5 modules, 4 runtime dependencies, nothing bloated
+
+## Quick Start
+
+```bash
+# No install needed
+npx jsonck config.json
+
+# Or install globally
 npm install -g jsonck
 ```
 
@@ -12,34 +35,43 @@ Requires Node.js >= 20.
 
 ## Examples
 
-Validate a file using its embedded `$schema`:
+### Validate using embedded `$schema`
 
 ```bash
 jsonck data.json
 ```
 
-Validate against a specific schema (local file or URL):
+If the JSON file contains `"$schema": "https://..."`, jsonck downloads and validates against it automatically.
+
+### Specify a schema explicitly
 
 ```bash
+# Local file
 jsonck data.json --schema ./schemas/my-schema.json
+
+# Remote URL
 jsonck data.json --schema https://example.com/schema.json
 ```
 
-Validate JSON from stdin (pipe from jq, curl, etc.):
+The `--schema` flag always overrides any `$schema` in the file.
+
+### Pipe from stdin
 
 ```bash
-cat data.json | jsonck - --schema ./schema.json
-jq '.config' big.json | jsonck - --schema ./config-schema.json
+cat data.json | jsonck --schema ./schema.json
 curl -s https://api.example.com/data | jsonck --schema ./schema.json
+jq '.config' big.json | jsonck - --schema ./config-schema.json
 ```
 
-Validate multiple files at once:
+### Batch validate
 
 ```bash
 jsonck *.json --schema ./schema.json
 ```
 
-Get structured JSON output (for scripts, CI, LLMs):
+### Structured JSON output
+
+Perfect for CI pipelines, scripts, and LLM tool integrations:
 
 ```bash
 jsonck data.json --schema ./schema.json --json
@@ -56,17 +88,20 @@ jsonck data.json --schema ./schema.json --json
 }
 ```
 
-Use exit codes in scripts:
+Multiple files produce a JSON array.
+
+### Use in scripts
 
 ```bash
 if jsonck data.json --schema ./schema.json; then
-  echo "Valid"
+  echo "Deploying..."
 else
-  echo "Invalid"
+  echo "Fix your config first."
+  exit 1
 fi
 ```
 
-## Usage
+## Reference
 
 ```
 jsonck [files...] [options]
@@ -74,55 +109,60 @@ jsonck [files...] [options]
 
 ### Arguments
 
-- `[files...]` — JSON files to validate. Use `-` for stdin. When no files are given and stdin is piped, reads from stdin automatically.
+| Argument | Description |
+|----------|-------------|
+| `[files...]` | JSON files to validate. Use `-` for stdin. Omit to auto-read piped input. |
 
 ### Options
 
 | Option | Description | Default |
 |--------|-------------|---------|
-| `-s, --schema <path-or-url>` | Schema file path or URL (overrides `$schema` in files) | — |
-| `--json` | Output results as structured JSON to stdout | `false` |
-| `--timeout <ms>` | Timeout for schema downloads | `30000` |
-| `-V, --version` | Output version number | — |
-| `-h, --help` | Display help | — |
+| `-s, --schema <path-or-url>` | Schema file path or URL. Overrides `$schema` in files. | — |
+| `--json` | Structured JSON output to stdout | `false` |
+| `--timeout <ms>` | Timeout for remote schema downloads | `30000` |
+| `-V, --version` | Print version | — |
+| `-h, --help` | Print help | — |
 
 ### Exit Codes
 
 | Code | Meaning |
 |------|---------|
-| `0` | All files are valid |
-| `1` | One or more files are invalid |
-| `2` | Usage or runtime error (missing file, bad JSON, no schema, timeout) |
+| `0` | All files valid |
+| `1` | One or more files invalid |
+| `2` | Runtime error (missing file, bad JSON, no schema, network timeout) |
 
 ### Output Modes
 
-**Text mode** (default): Prints `Valid` or `Invalid` to stdout/stderr. In batch mode, prefixes each line with the filename.
+**Text** (default) — human-readable. Prints `Valid`/`Invalid` to stdout/stderr. Batch mode prefixes each line with the filename.
 
-**JSON mode** (`--json`): Writes the full result to stdout. Single file produces a JSON object; multiple files produce a JSON array. Nothing is written to stderr (except fatal crashes). This is the recommended mode for scripts, CI pipelines, and LLM tool calls.
+**JSON** (`--json`) — machine-readable. Single file → JSON object. Multiple files → JSON array. Errors are inline, not on stderr. Recommended for scripts, CI, and LLM tool calls.
+
+### Schema Resolution
+
+1. `--schema` flag (always wins)
+2. `$schema` property in the JSON file
+3. Error if neither is found
+
+Schemas are cached per invocation — validating 100 files against the same remote schema downloads it once.
+
+## LLM Integration
+
+jsonck is designed to work as a tool in LLM agent workflows. Use `--json` for structured output that's easy to parse:
+
+```bash
+jsonck config.json --schema https://example.com/schema.json --json
+```
+
+Returns a JSON object with `file`, `valid`, and `errors` fields. Exit code `0` means valid, `1` means invalid, `2` means something broke. No interactive prompts, no color codes in JSON mode — clean machine-readable output.
 
 ## Development
 
-### Build
-
 ```bash
-npm run build
+npm run build        # tsc → dist/
+npm test             # vitest (build first — CLI tests exec dist/cli.js)
+DEBUG=jsonck jsonck data.json  # debug logging
 ```
 
-### Test
+## License
 
-```bash
-npm test
-```
-
-### Debug
-
-```bash
-DEBUG=jsonck jsonck data.json
-```
-
-## Dependencies
-
-- [Ajv](https://ajv.js.org/) — JSON Schema validator (2020-12)
-- [ajv-formats](https://github.com/ajv-validator/ajv-formats) — Format validation
-- [Commander.js](https://github.com/tj/commander.js) — CLI framework
-- [debug](https://github.com/debug-js/debug) — Debug logging
+[MIT](LICENSE)
