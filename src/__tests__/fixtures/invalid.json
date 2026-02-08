@@ -1,0 +1,5 @@
+{
+  "name": 123,
+  "version": "not-semver",
+  "unexpected": true
+}

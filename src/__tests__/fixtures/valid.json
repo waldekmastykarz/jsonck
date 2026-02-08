@@ -1,0 +1,7 @@
+{
+  "name": "test-package",
+  "version": "1.0.0",
+  "description": "A valid test fixture",
+  "tags": ["test", "fixture"],
+  "email": "test@example.com"
+}

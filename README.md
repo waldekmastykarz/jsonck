@@ -1,78 +1,128 @@
 # JSON Validator CLI
 
-A command-line tool to validate JSON files against JSON schemas.
+Validate JSON files against JSON schemas. Supports local files, URLs, stdin, batch validation, and structured JSON output for scripts and LLMs.
 
 ## Installation
 
-1. Clone this repository
-2. Install dependencies: `npm install`
-3. Build the project: `npm run build`
-4. Link globally: `npm link`
-
-## Usage
-
 ```bash
-json-validator <file> [options]
+npm install -g json-validator
 ```
 
-### Arguments
+Requires Node.js >= 20.
 
-- `<file>` - Path to the JSON file to validate
+## Examples
 
-### Options
+Validate a file using its embedded `$schema`:
 
-- `-s, --schema <url>` - URL of the schema to validate against (overrides $schema in file)
-- `-V, --version` - Output the version number
-- `-h, --help` - Display help information
-
-### Exit Codes
-
-- `0` - File is valid
-- `1` - File is invalid or an error occurred
-
-### Examples
-
-#### Validate a JSON file using its embedded $schema property:
 ```bash
 json-validator data.json
 ```
 
-#### Validate a JSON file against a specific schema:
+Validate against a specific schema (local file or URL):
+
 ```bash
-json-validator data.json --schema https://json-schema.org/draft-07/schema
+json-validator data.json --schema ./schemas/my-schema.json
+json-validator data.json --schema https://example.com/schema.json
 ```
 
-#### Check exit code in scripts:
+Validate JSON from stdin (pipe from jq, curl, etc.):
+
 ```bash
-if json-validator data.json; then
-    echo "Valid JSON"
+cat data.json | json-validator - --schema ./schema.json
+jq '.config' big.json | json-validator - --schema ./config-schema.json
+curl -s https://api.example.com/data | json-validator --schema ./schema.json
+```
+
+Validate multiple files at once:
+
+```bash
+json-validator *.json --schema ./schema.json
+```
+
+Get structured JSON output (for scripts, CI, LLMs):
+
+```bash
+json-validator data.json --schema ./schema.json --json
+```
+
+```json
+{
+  "file": "data.json",
+  "valid": false,
+  "errors": [
+    { "path": "/name", "message": "must be string" },
+    { "path": "/age", "message": "must be >= 0" }
+  ]
+}
+```
+
+Use exit codes in scripts:
+
+```bash
+if json-validator data.json --schema ./schema.json; then
+  echo "Valid"
 else
-    echo "Invalid JSON"
+  echo "Invalid"
 fi
 ```
 
-### Output
+## Usage
 
-- **Valid file**: Prints "Valid" to stdout and exits with code 0
-- **Invalid file**: Prints validation errors to stderr and exits with code 1
-- **Missing schema**: Prints error message and exits with code 1
+```
+json-validator [files...] [options]
+```
+
+### Arguments
+
+- `[files...]` — JSON files to validate. Use `-` for stdin. When no files are given and stdin is piped, reads from stdin automatically.
+
+### Options
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `-s, --schema <path-or-url>` | Schema file path or URL (overrides `$schema` in files) | — |
+| `--json` | Output results as structured JSON to stdout | `false` |
+| `--timeout <ms>` | Timeout for schema downloads | `30000` |
+| `-V, --version` | Output version number | — |
+| `-h, --help` | Display help | — |
+
+### Exit Codes
+
+| Code | Meaning |
+|------|---------|
+| `0` | All files are valid |
+| `1` | One or more files are invalid |
+| `2` | Usage or runtime error (missing file, bad JSON, no schema, timeout) |
+
+### Output Modes
+
+**Text mode** (default): Prints `Valid` or `Invalid` to stdout/stderr. In batch mode, prefixes each line with the filename.
+
+**JSON mode** (`--json`): Writes the full result to stdout. Single file produces a JSON object; multiple files produce a JSON array. Nothing is written to stderr (except fatal crashes). This is the recommended mode for scripts, CI pipelines, and LLM tool calls.
 
 ## Development
 
 ### Build
+
 ```bash
 npm run build
 ```
 
+### Test
+
+```bash
+npm test
+```
+
 ### Debug
-Set the `DEBUG` environment variable to see detailed validation logs:
+
 ```bash
 DEBUG=json-validator json-validator data.json
 ```
 
 ## Dependencies
 
-- [AJV](https://ajv.js.org/) - JSON Schema validator
-- [ajv-formats](https://github.com/ajv-validator/ajv-formats) - Format validation for AJV
-- [Commander.js](https://github.com/tj/commander.js) - Command-line interface framework
-- [debug](https://github.com/debug-js/debug) - Debug logging
+- [Ajv](https://ajv.js.org/) — JSON Schema validator (2020-12)
+- [ajv-formats](https://github.com/ajv-validator/ajv-formats) — Format validation
+- [Commander.js](https://github.com/tj/commander.js) — CLI framework
+- [debug](https://github.com/debug-js/debug) — Debug logging
