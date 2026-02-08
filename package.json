@@ -1,6 +1,6 @@
 {
   "name": "jsonck",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Validate JSON files against JSON schemas. Supports stdin, batch, local/remote schemas, and structured JSON output.",
   "type": "module",
   "main": "dist/index.js",
