@@ -5,7 +5,7 @@
   "type": "module",
   "main": "dist/index.js",
   "bin": {
-    "jsonck": "./dist/cli.js"
+    "jsonck": "dist/cli.js"
   },
   "files": [
     "dist/**/*.js",
@@ -20,7 +20,12 @@
     "test": "vitest run",
     "test:watch": "vitest"
   },
-  "keywords": ["json", "validator", "schema", "cli"],
+  "keywords": [
+    "json",
+    "validator",
+    "schema",
+    "cli"
+  ],
   "author": "",
   "license": "MIT",
   "dependencies": {
