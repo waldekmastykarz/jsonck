@@ -18,7 +18,7 @@
   },
   "keywords": ["json", "validator", "schema", "cli"],
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "dependencies": {
     "ajv": "^8.12.0",
     "ajv-formats": "^2.1.1",
