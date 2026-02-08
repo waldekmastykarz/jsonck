@@ -44,6 +44,18 @@ program
     (v) => parseInt(v, 10),
     30000
   )
+  .addHelpText(
+    'after',
+    `
+Examples:
+  jsonck config.json                       Validate a file (uses $schema inside it)
+  jsonck config.json --schema schema.json  Validate with an explicit local schema
+  jsonck config.json --schema https://…    Validate with a remote schema
+  jsonck *.json                            Validate multiple files at once
+  cat config.json | jsonck                 Validate from piped stdin
+  jsonck -                                 Read stdin explicitly
+  jsonck config.json --json                Machine-readable JSON output`
+  )
   .action(async (files: string[], options: CliOptions) => {
     const cache = new SchemaCache();
     const results: FileResult[] = [];
