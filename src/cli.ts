@@ -11,6 +11,8 @@ import {
   toFileResult,
   formatJsonOutput,
   printTextResult,
+  printPlainResult,
+  printPlainError,
   printProgress,
   type FileResult,
 } from './output.js';
@@ -23,6 +25,8 @@ const log = debug('jsonck');
 interface CliOptions {
   schema?: string;
   json: boolean;
+  plain: boolean;
+  quiet: boolean;
   timeout: number;
 }
 
@@ -38,6 +42,8 @@ program
     'schema file path or URL (overrides $schema in files)'
   )
   .option('--json', 'output results as JSON to stdout', false)
+  .option('--plain', 'output stable tab-separated text for scripting', false)
+  .option('-q, --quiet', 'suppress all output; rely on exit code only', false)
   .option(
     '--timeout <ms>',
     'timeout for schema downloads in milliseconds',
@@ -54,7 +60,14 @@ Examples:
   jsonck *.json                            Validate multiple files at once
   cat config.json | jsonck                 Validate from piped stdin
   jsonck -                                 Read stdin explicitly
-  jsonck config.json --json                Machine-readable JSON output`
+  jsonck config.json --json                Machine-readable JSON output
+  jsonck config.json --plain               Stable tab-separated output
+  jsonck config.json -q                    Silent; check exit code only
+
+Exit codes:
+  0  All files valid
+  1  One or more files invalid
+  2  Runtime error (file not found, schema download failed, etc.)`
   )
   .action(async (files: string[], options: CliOptions) => {
     const cache = new SchemaCache();
@@ -87,12 +100,14 @@ Examples:
       }
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
-      if (options.json) {
-        process.stdout.write(
-          JSON.stringify({ error: msg }, null, 2) + '\n'
-        );
-      } else {
-        process.stderr.write(`Error: ${msg}\n`);
+      if (!options.quiet) {
+        if (options.json) {
+          process.stdout.write(formatJsonOutput([], msg) + '\n');
+        } else if (options.plain) {
+          printPlainError('', msg);
+        } else {
+          process.stderr.write(`Error: ${msg}\n`);
+        }
       }
       process.exit(2);
     }
@@ -109,7 +124,9 @@ Examples:
         );
 
         if (
+          !options.quiet &&
           !options.json &&
+          !options.plain &&
           schemaSource.startsWith('http') &&
           cache.size === 0
         ) {
@@ -118,12 +135,16 @@ Examples:
 
         const schema = await cache.load(schemaSource, options.timeout);
         const result = validate(json, schema);
-        const fileResult = toFileResult(input.name, result);
+        const fileResult = toFileResult(input.name, result, schemaSource);
 
         results.push(fileResult);
 
-        if (!options.json) {
-          printTextResult(fileResult, isBatch);
+        if (!options.quiet && !options.json) {
+          if (options.plain) {
+            printPlainResult(fileResult);
+          } else {
+            printTextResult(fileResult, isBatch);
+          }
         }
 
         log(
@@ -140,13 +161,19 @@ Examples:
             valid: false,
             errors: [{ path: '', message: msg }],
           });
-        } else {
-          process.stderr.write(`${isBatch ? input.name + ': ' : ''}Error: ${msg}\n`);
+        } else if (!options.quiet) {
+          if (options.plain) {
+            printPlainError(input.name, msg);
+          } else {
+            process.stderr.write(
+              `${isBatch ? input.name + ': ' : ''}Error: ${msg}\n`
+            );
+          }
         }
       }
     }
 
-    if (options.json) {
+    if (!options.quiet && options.json) {
       process.stdout.write(formatJsonOutput(results) + '\n');
     }
 

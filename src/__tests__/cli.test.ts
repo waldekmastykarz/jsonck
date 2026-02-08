@@ -118,10 +118,14 @@ describe('CLI integration', () => {
         '--json',
       ]);
       expect(exitCode).toBe(0);
-      const result = JSON.parse(stdout);
+      const envelope = JSON.parse(stdout);
+      expect(envelope.results).toHaveLength(1);
+      expect(envelope.summary).toEqual({ total: 1, valid: 1, invalid: 0 });
+      const result = envelope.results[0];
       expect(result.valid).toBe(true);
       expect(result.errors).toEqual([]);
       expect(result.file).toContain('valid.json');
+      expect(result.schema).toContain('schema.json');
     });
 
     it('outputs structured JSON for invalid file', async () => {
@@ -132,14 +136,18 @@ describe('CLI integration', () => {
         '--json',
       ]);
       expect(exitCode).toBe(1);
-      const result = JSON.parse(stdout);
+      const envelope = JSON.parse(stdout);
+      expect(envelope.results).toHaveLength(1);
+      expect(envelope.summary.invalid).toBe(1);
+      const result = envelope.results[0];
       expect(result.valid).toBe(false);
       expect(result.errors.length).toBeGreaterThan(0);
       expect(result.errors[0]).toHaveProperty('path');
       expect(result.errors[0]).toHaveProperty('message');
+      expect(result.schema).toContain('schema.json');
     });
 
-    it('outputs JSON array for batch validation', async () => {
+    it('outputs JSON envelope for batch validation', async () => {
       const { stdout, exitCode } = await run([
         VALID,
         INVALID,
@@ -148,11 +156,11 @@ describe('CLI integration', () => {
         '--json',
       ]);
       expect(exitCode).toBe(1); // at least one invalid
-      const results = JSON.parse(stdout);
-      expect(Array.isArray(results)).toBe(true);
-      expect(results).toHaveLength(2);
-      expect(results[0].valid).toBe(true);
-      expect(results[1].valid).toBe(false);
+      const envelope = JSON.parse(stdout);
+      expect(envelope.results).toHaveLength(2);
+      expect(envelope.summary).toEqual({ total: 2, valid: 1, invalid: 1 });
+      expect(envelope.results[0].valid).toBe(true);
+      expect(envelope.results[1].valid).toBe(false);
     });
   });
 
@@ -184,7 +192,8 @@ describe('CLI integration', () => {
         json
       );
       expect(exitCode).toBe(0);
-      const result = JSON.parse(stdout);
+      const envelope = JSON.parse(stdout);
+      const result = envelope.results[0];
       expect(result.valid).toBe(true);
       expect(result.file).toBe('<stdin>');
     });
@@ -210,6 +219,89 @@ describe('CLI integration', () => {
       expect(exitCode).toBe(1);
       expect(stdout).toContain('Valid');
       expect(stderr).toContain('Invalid');
+    });
+  });
+
+  describe('--quiet flag', () => {
+    it('suppresses output for valid file', async () => {
+      const { stdout, stderr, exitCode } = await run([
+        VALID,
+        '--schema',
+        SCHEMA,
+        '--quiet',
+      ]);
+      expect(exitCode).toBe(0);
+      expect(stdout).toBe('');
+      expect(stderr).toBe('');
+    });
+
+    it('suppresses output for invalid file', async () => {
+      const { stdout, stderr, exitCode } = await run([
+        INVALID,
+        '--schema',
+        SCHEMA,
+        '--quiet',
+      ]);
+      expect(exitCode).toBe(1);
+      expect(stdout).toBe('');
+      expect(stderr).toBe('');
+    });
+
+    it('suppresses output on runtime error', async () => {
+      const { stdout, stderr, exitCode } = await run([
+        '/nonexistent/file.json',
+        '--schema',
+        SCHEMA,
+        '--quiet',
+      ]);
+      expect(exitCode).toBe(2);
+      expect(stdout).toBe('');
+      expect(stderr).toBe('');
+    });
+  });
+
+  describe('--plain output', () => {
+    it('outputs VALID for valid file', async () => {
+      const { stdout, exitCode } = await run([
+        VALID,
+        '--schema',
+        SCHEMA,
+        '--plain',
+      ]);
+      expect(exitCode).toBe(0);
+      expect(stdout).toMatch(/^VALID\t/);
+      expect(stdout).toContain('valid.json');
+    });
+
+    it('outputs INVALID for invalid file', async () => {
+      const { stdout, exitCode } = await run([
+        INVALID,
+        '--schema',
+        SCHEMA,
+        '--plain',
+      ]);
+      expect(exitCode).toBe(1);
+      expect(stdout).toMatch(/INVALID\t/);
+      expect(stdout).toContain('invalid.json');
+    });
+
+    it('outputs ERROR for runtime error', async () => {
+      const { stdout, exitCode } = await run([
+        NO_SCHEMA,
+        '--plain',
+      ]);
+      expect(exitCode).toBe(2);
+      expect(stdout).toMatch(/ERROR\t/);
+    });
+
+    it('includes schema source in output', async () => {
+      const { stdout } = await run([
+        VALID,
+        '--schema',
+        SCHEMA,
+        '--plain',
+      ]);
+      expect(stdout).toContain('schema.json');
     });
   });
 });
