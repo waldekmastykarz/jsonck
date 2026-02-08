@@ -7,6 +7,10 @@
   "bin": {
     "jsonck": "./dist/cli.js"
   },
+  "files": [
+    "dist/**/*.js",
+    "dist/**/*.d.ts"
+  ],
   "engines": {
     "node": ">=20"
   },
