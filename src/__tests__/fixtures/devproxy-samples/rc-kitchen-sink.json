@@ -1,0 +1,55 @@
+{
+  "$schema": "https://raw.githubusercontent.com/dotnet/dev-proxy/main/schemas/v2.1.0/rc.schema.json",
+  "port": 8080,
+  "apiPort": 8888,
+  "ipAddress": "0.0.0.0",
+  "logLevel": "debug",
+  "record": true,
+  "showTimestamps": true,
+  "asSystemProxy": false,
+  "newVersionNotification": "stable",
+  "timeout": 30,
+  "filterByHeaders": [
+    {
+      "name": "X-DevProxy",
+      "value": "true"
+    },
+    {
+      "name": "Authorization",
+      "value": "Bearer *"
+    }
+  ],
+  "languageModel": {
+    "enabled": true,
+    "client": "Ollama",
+    "model": "llama3.2",
+    "url": "http://localhost:11434",
+    "cacheResponses": true
+  },
+  "watchPids": [1234, 5678],
+  "watchProcessNames": ["msedge", "chrome"],
+  "plugins": [
+    {
+      "name": "MockResponsePlugin",
+      "enabled": true,
+      "pluginPath": "~appFolder/plugins/DevProxy.Plugins.dll",
+      "configSection": "mocksPlugin",
+      "urlsToWatch": [
+        "https://api.example.com/*"
+      ]
+    },
+    {
+      "name": "RateLimitingPlugin",
+      "enabled": false,
+      "pluginPath": "~appFolder/plugins/DevProxy.Plugins.dll"
+    }
+  ],
+  "urlsToWatch": [
+    "https://api.example.com/*",
+    "https://graph.microsoft.com/*"
+  ],
+  "mocksPlugin": {
+    "$schema": "https://raw.githubusercontent.com/dotnet/dev-proxy/main/schemas/v2.1.0/mockresponseplugin.schema.json",
+    "mocksFile": "mocks.json"
+  }
+}
