@@ -13,6 +13,8 @@ npx jsonck data.json
 # ✓ valid
 ```
 
+![Terminal window showing jsonck validating a Dev Proxy sample](assets/screenshot.png)
+
 ## Why jsonck?
 
 - **Zero config** — reads `$schema` from your JSON files automatically
